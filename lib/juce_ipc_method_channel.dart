@@ -14,4 +14,10 @@ class MethodChannelJuceIpc extends JuceIpcPlatform {
     final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
     return version;
   }
+
+  @override
+  Future<num> sayHelloAndReturnCount(String greeting) async {
+    final count = await methodChannel.invokeMethod<num>('sayHelloAndReturnCount');
+    return count!;
+  }
 }
