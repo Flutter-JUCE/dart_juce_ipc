@@ -12,6 +12,7 @@ on:
   schedule:
     # runs the CI everyday at 10AM
     - cron: "0 10 * * *"
+  workflow-dispatch
 
 jobs:
   flutter:
