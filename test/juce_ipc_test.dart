@@ -1,29 +1,33 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'dart:async';
+
+import 'package:dcli_core/dcli_core.dart';
 import 'package:juce_ipc/juce_ipc.dart';
-import 'package:juce_ipc/juce_ipc_platform_interface.dart';
-import 'package:juce_ipc/juce_ipc_method_channel.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:test/test.dart';
+import 'package:path/path.dart' as p;
+import 'dart:convert';
 
-class MockJuceIpcPlatform
-    with MockPlatformInterfaceMixin
-    implements JuceIpcPlatform {
+Future<void> performTest(JuceInterprocessConnection interprocess) async {
+  final receivedMessages = interprocess.read.transform(utf8.decoder).toList();
 
-  @override
-  Future<String?> getPlatformVersion() => Future.value('42');
+  interprocess.write.write('1');
+  interprocess.write.write('2');
+  interprocess.write.write('3');
+
+  await interprocess.write.flush();
+  await interprocess.write.close();
+
+  expect(await receivedMessages, ['1', '2', '3']);
 }
 
 void main() {
-  final JuceIpcPlatform initialPlatform = JuceIpcPlatform.instance;
+  setUp(() {});
 
-  test('$MethodChannelJuceIpc is the default instance', () {
-    expect(initialPlatform, isInstanceOf<MethodChannelJuceIpc>());
-  });
+  tearDown(() {});
 
-  test('getPlatformVersion', () async {
-    JuceIpc juceIpcPlugin = JuceIpc();
-    MockJuceIpcPlatform fakePlatform = MockJuceIpcPlatform();
-    JuceIpcPlatform.instance = fakePlatform;
-
-    expect(await juceIpcPlugin.getPlatformVersion(), '42');
+  test('InterprocessConnection using named pipe', () async {
+    await withTempDir((dir) async {
+      final interprocess = JuceInterprocessConnectionNamedPipe(p.join(dir, "test-named-pipe"));
+      await performTest(interprocess);
+    });
   });
 }

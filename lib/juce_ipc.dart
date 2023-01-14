@@ -1,12 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:juce_ipc/message_framing.dart';
-
-import 'juce_ipc_platform_interface.dart';
 
 const _defaultHeaderMagic = 0xf2b49e2c;
 
@@ -87,14 +82,4 @@ class JuceInterprocessConnectionSocket implements JuceInterprocessConnection {
   @override
   // TODO: implement write
   IOSink get write => throw UnimplementedError();
-}
-
-class JuceIpc {
-  Future<String?> getPlatformVersion() {
-    return JuceIpcPlatform.instance.getPlatformVersion();
-  }
-
-  Future<num> sayHelloAndReturnCount(String greeting) async {
-    return JuceIpcPlatform.instance.sayHelloAndReturnCount(greeting);
-  }
 }
