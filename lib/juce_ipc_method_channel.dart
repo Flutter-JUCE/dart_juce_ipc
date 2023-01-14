@@ -17,7 +17,9 @@ class MethodChannelJuceIpc extends JuceIpcPlatform {
 
   @override
   Future<num> sayHelloAndReturnCount(String greeting) async {
-    final count = await methodChannel.invokeMethod<num>('sayHelloAndReturnCount');
+    final count = await methodChannel.invokeMethod<num>('sayHelloAndReturnCount', greeting);
     return count!;
   }
+
+  // TODO test out event channel for data stream. This could be used to represent an infinite poll/read loop on a socket
 }

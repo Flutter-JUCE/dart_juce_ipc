@@ -16,6 +16,9 @@ struct _JuceIpcPlugin {
 
 G_DEFINE_TYPE(JuceIpcPlugin, juce_ipc_plugin, g_object_get_type())
 
+static FlMethodResponse *handle_get_platform_version(FlMethodCall *method_call);
+static FlMethodResponse *handle_say_hello_and_return_count(FlMethodCall *method_call);
+
 // Called when a method call is received from Flutter.
 static void juce_ipc_plugin_handle_method_call(
     JuceIpcPlugin* self,
@@ -25,25 +28,48 @@ static void juce_ipc_plugin_handle_method_call(
   const gchar* method = fl_method_call_get_name(method_call);
 
   if (strcmp(method, "getPlatformVersion") == 0) {
-    struct utsname uname_data = {};
-    uname(&uname_data);
-    g_autofree gchar *version = g_strdup_printf("Linux %s", uname_data.version);
-    g_autoptr(FlValue) result = fl_value_new_string(version);
-    response = FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+    response = handle_get_platform_version(method_call);
   } else if (strcmp(method, "sayHelloAndReturnCount") == 0) {
-    //const auto args = fl_method_call_get_args(method_call);
-    const gchar *greeting = "hello!"; // TODO read the string passed to method_call
-    g_print("%s\n", greeting);
-
-    static int count = 0;
-    count++;
-    g_autoptr(FlValue) result = fl_value_new_int(count);
-    response = FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+    response = handle_say_hello_and_return_count(method_call);
   } else {
     response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
   }
 
   fl_method_call_respond(method_call, response, nullptr);
+}
+
+
+static FlMethodResponse *handle_get_platform_version(FlMethodCall *method_call) {
+    struct utsname uname_data = {};
+    uname(&uname_data);
+    g_autofree gchar *version = g_strdup_printf("Linux %s", uname_data.version);
+    // TODO WTF is the memory ownership model in the flutter API? It's not
+    // documented. Is this invalid? result is freed when we return, while a copy
+    // of it may be returned inside the new response.
+    g_autoptr(FlValue) result = fl_value_new_string(version);
+    return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+}
+
+static FlMethodResponse *handle_say_hello_and_return_count(FlMethodCall *method_call) {
+    const auto args = fl_method_call_get_args(method_call);
+    const auto type = fl_value_get_type(args);
+    if(type != FL_VALUE_TYPE_STRING)
+    {
+        return FL_METHOD_RESPONSE(fl_method_error_response_new(
+                    "",
+                    "Arg must be a string",
+                    nullptr));
+    }
+    const auto greeting = fl_value_get_string(args);
+    
+    g_print("type: %d\n", type);
+    
+    g_print("%s\n", greeting);
+
+    static int count = 0;
+    count++;
+    g_autoptr(FlValue) result = fl_value_new_int(count);
+    return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
 
 static void juce_ipc_plugin_dispose(GObject* object) {

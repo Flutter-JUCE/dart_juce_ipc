@@ -58,7 +58,10 @@ class _MyAppState extends State<MyApp> {
           child: Text('Running on: $_platformVersion\n'),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => _juceIpcPlugin.sayHelloAndReturnCount("Hello World"),
+          onPressed: () {
+            final count = _juceIpcPlugin.sayHelloAndReturnCount("Hello World");
+            count.then((count) => debugPrint('count: $count'));
+          },
         ),
       ),
     );
