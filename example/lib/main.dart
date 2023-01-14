@@ -3,14 +3,13 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 
-
 import 'package:flutter/services.dart';
 import 'package:juce_ipc/juce_ipc.dart';
 
 void main() async {
   print("demo using File");
   File('/tmp/juce-test-pipe').openRead().transform(utf8.decoder).listen(
-        (String character) {
+    (String character) {
       print(character);
     },
     onDone: () => print('File StreamSubscription closing'),
@@ -27,7 +26,7 @@ void main() async {
   print("demo using Interprocess");
   final interprocess = JuceInterprocessConnectionNamedPipe('/tmp/pipe');
   interprocess.read.transform(utf8.decoder).listen(
-        (String character) {
+    (String character) {
       print(character);
     },
     onDone: () => print('Interprocess StreamSubscription closing'),

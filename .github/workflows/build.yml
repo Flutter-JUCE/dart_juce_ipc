@@ -18,9 +18,10 @@ jobs:
     strategy:
       matrix:
         channel:
-          - master
-          - dev
+          # The dev channel does not support reading from a fifo for now
+          # - dev
           - beta
+          - master
         os:
           - macos-latest
           - ubuntu-latest
@@ -40,6 +41,9 @@ jobs:
       - uses: subosito/flutter-action@v2.8.0
         with:
           channel: ${{ matrix.channel }}
+
+      - name: Flutter doctor
+        run: flutter doctor --verbose
 
       - name: Install dependencies
         run: flutter pub get
