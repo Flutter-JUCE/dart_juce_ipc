@@ -43,7 +43,7 @@ jobs:
           channel: ${{ matrix.channel }}
 
       - name: Flutter doctor
-        run: flutter doctor --verbose
+        run: flutter doctor --verbose --no-version-check
 
       - name: Install dependencies
         run: flutter pub get
