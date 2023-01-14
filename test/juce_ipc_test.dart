@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dcli_core/dcli_core.dart';
 import 'package:juce_ipc/juce_ipc.dart';
+import 'package:stdlibc/stdlibc.dart';
 import 'package:test/test.dart';
 import 'package:path/path.dart' as p;
 import 'dart:convert';
@@ -20,13 +21,11 @@ Future<void> performTest(JuceInterprocessConnection interprocess) async {
 }
 
 void main() {
-  setUp(() {});
-
-  tearDown(() {});
-
   test('InterprocessConnection using named pipe', () async {
     await withTempDir((dir) async {
-      final interprocess = JuceInterprocessConnectionNamedPipe(p.join(dir, "test-named-pipe"));
+      final pipePath = p.join(dir, "test-named-pipe");
+      mkfifo(pipePath, (6 << 6) | (0 << 3) | 0);
+      final interprocess = JuceInterprocessConnectionNamedPipe(pipePath);
       await performTest(interprocess);
     });
   });
