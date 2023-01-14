@@ -65,3 +65,5 @@ jobs:
           if test -d "test"; then
             curl -s https://codecov.io/bash | bash
           fi
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
