@@ -67,3 +67,4 @@ jobs:
           fi
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          CODECOV_FLAGS: unit,${{ matrix.os }}
