@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
-project(GUI_APP_EXAMPLE VERSION 0.0.1)
+project(CHILD_PROCESS_DEMO VERSION 1.0.0 LANGUAGES CXX)
+
+# std::filesystem
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # If you've installed JUCE somehow (via a package manager, or directly using the CMake install
 # target), you'll need to tell this project that it depends on the installed copy of JUCE. If you've
@@ -11,10 +15,3 @@ find_package(JUCE CONFIG REQUIRED)        # If you've installed JUCE to your sys
 # add_subdirectory(JUCE)                    # If you've put JUCE in a subdirectory called JUCE
 
 juce_add_pip(ChildProcessDemo.h)
-
-#target_compile_definitions(GuiAppExample
-#    PRIVATE
-#        JUCE_WEB_BROWSER=0
-#        JUCE_USE_CURL=0
-#        JUCE_APPLICATION_NAME_STRING="ChildProcessDemo"
-#        JUCE_APPLICATION_VERSION_STRING="")

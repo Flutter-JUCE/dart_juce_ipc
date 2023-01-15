@@ -47,6 +47,7 @@
 #pragma once
 
 #include "DemoUtilities.h"
+#include <filesystem>
 
 //==============================================================================
 // This is a token that's used at both ends of our parent-child processes, to
@@ -141,13 +142,33 @@ public:
     {
         if (coordinatorProcess.get() == nullptr)
         {
-            coordinatorProcess = std::make_unique<DemoCoordinatorProcess> (*this);
+            auto currentPath = File::getSpecialLocation(File::currentExecutableFile);
+            std::filesystem::path childProcessPath{ currentPath.getFullPathName().toStdString() };
+            // get to the root of the project
+            childProcessPath /= "../../../../../..";
+            // get to the flutter executable
+            childProcessPath /= "example/build/linux/x64/release/bundle/juce_ipc_example";
+            childProcessPath = childProcessPath.lexically_normal();
 
-            if (coordinatorProcess->launchWorkerProcess (File::getSpecialLocation (File::currentExecutableFile),
+            if(!std::filesystem::exists(childProcessPath))
+            {
+                logMessage("The child exectuable doesn't exist in the file "
+                        "system. Did you build the example in release mode "
+                        "using flutter? I was looking for it at the following "
+                        "path:");
+                logMessage(childProcessPath.string());
+            }
+
+            coordinatorProcess = std::make_unique<DemoCoordinatorProcess> (*this);
+            if (coordinatorProcess->launchWorkerProcess ({childProcessPath.string()},
                                                          demoCommandLineUID,
                                                          timeoutMillis))
             {
                 logMessage ("Child process started");
+            }
+            else
+            {
+                logMessage ("Failed to start child process");
             }
         }
     }
@@ -220,7 +241,7 @@ public:
     //==============================================================================
     std::unique_ptr<DemoCoordinatorProcess> coordinatorProcess;
 
-    static constexpr auto timeoutSeconds = 10;
+    static constexpr auto timeoutSeconds = 1;
     static constexpr auto timeoutMillis = timeoutSeconds * 1000;
 
 private:
@@ -254,124 +275,55 @@ private:
 };
 
 //==============================================================================
-/*  This class gets instantiated in the child process, and receives messages from
-    the coordinator process.
-*/
-class DemoWorkerProcess  : public ChildProcessWorker,
-                           private DeletedAtShutdown
+// As we need to modify the JUCEApplication::initialise method to launch the child process
+// based on the command line parameters, we can't just use the normal auto-generated Main.cpp.
+// Instead, we don't do anything in Main.cpp and create a JUCEApplication subclass here with
+// the necessary modifications.
+class Application    : public JUCEApplication
 {
 public:
-    DemoWorkerProcess() = default;
+    //==============================================================================
+    Application() {}
 
-    void handleMessageFromCoordinator (const MemoryBlock& mb) override
+    const String getApplicationName() override              { return "ChildProcessDemo"; }
+    const String getApplicationVersion() override           { return "1.0.0"; }
+
+    void initialise (const String& commandLine) override
     {
-        ValueTree incomingMessage (memoryBlockToValueTree (mb));
-
-        /*  In this demo we're only expecting one type of message, which will contain a 'count' parameter -
-            we'll just increment that number and send back a new message containing the new number.
-
-            Obviously in a real app you'll probably want to look at the type of the message, and do
-            some more interesting behaviour.
-        */
-
-        ValueTree reply ("REPLY");
-        reply.setProperty ("countPlusOne", static_cast<int> (incomingMessage["count"]) + 1, nullptr);
-
-        sendMessageToCoordinator (valueTreeToMemoryBlock (reply));
+        mainWindow = std::make_unique<MainWindow> ("ChildProcessDemo", std::make_unique<ChildProcessDemo>());
     }
 
-    void handleConnectionMade() override
-    {
-        // This method is called when the connection is established, and in response, we'll just
-        // send off a message to say hello.
-        ValueTree reply ("HelloWorld");
-        sendMessageToCoordinator (valueTreeToMemoryBlock (reply));
-    }
+    void shutdown() override                                { mainWindow = nullptr; }
 
-    /* If no pings are received from the coordinator process for a number of seconds, then this will get invoked.
-       Typically, you'll want to use this as a signal to kill the process as quickly as possible, as you
-       don't want to leave it hanging around as a zombie.
-    */
-    void handleConnectionLost() override
+private:
+    class MainWindow    : public DocumentWindow
     {
-        JUCEApplication::quit();
-    }
+    public:
+        MainWindow (const String& name, std::unique_ptr<Component> c)
+           : DocumentWindow (name,
+                             Desktop::getInstance().getDefaultLookAndFeel()
+                                                   .findColour (ResizableWindow::backgroundColourId),
+                             DocumentWindow::allButtons)
+        {
+            setUsingNativeTitleBar (true);
+            setContentOwned (c.release(), true);
+
+            centreWithSize (getWidth(), getHeight());
+
+            setVisible (true);
+        }
+
+        void closeButtonPressed() override
+        {
+            JUCEApplication::getInstance()->systemRequestedQuit();
+        }
+
+    private:
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
+    };
+
+    std::unique_ptr<MainWindow> mainWindow;
 };
 
 //==============================================================================
-/*  The JUCEApplication::initialise method calls this function to allow the
-    child process to launch when the command line parameters indicate that we're
-    being asked to run as a child process.
-*/
-inline bool invokeChildProcessDemo (const String& commandLine)
-{
-    auto worker = std::make_unique<DemoWorkerProcess>();
-
-    if (worker->initialiseFromCommandLine (commandLine, demoCommandLineUID, ChildProcessDemo::timeoutMillis))
-    {
-        worker.release(); // allow the worker object to stay alive - it'll handle its own deletion.
-        return true;
-    }
-
-    return false;
-}
-
-#ifndef JUCE_DEMO_RUNNER
- //==============================================================================
- // As we need to modify the JUCEApplication::initialise method to launch the child process
- // based on the command line parameters, we can't just use the normal auto-generated Main.cpp.
- // Instead, we don't do anything in Main.cpp and create a JUCEApplication subclass here with
- // the necessary modifications.
- class Application    : public JUCEApplication
- {
- public:
-     //==============================================================================
-     Application() {}
-
-     const String getApplicationName() override              { return "ChildProcessDemo"; }
-     const String getApplicationVersion() override           { return "1.0.0"; }
-
-     void initialise (const String& commandLine) override
-     {
-         // launches the child process if the command line parameters contain the demo UID
-         if (invokeChildProcessDemo (commandLine))
-             return;
-
-         mainWindow = std::make_unique<MainWindow> ("ChildProcessDemo", std::make_unique<ChildProcessDemo>());
-     }
-
-     void shutdown() override                                { mainWindow = nullptr; }
-
- private:
-     class MainWindow    : public DocumentWindow
-     {
-     public:
-         MainWindow (const String& name, std::unique_ptr<Component> c)
-            : DocumentWindow (name,
-                              Desktop::getInstance().getDefaultLookAndFeel()
-                                                    .findColour (ResizableWindow::backgroundColourId),
-                              DocumentWindow::allButtons)
-         {
-             setUsingNativeTitleBar (true);
-             setContentOwned (c.release(), true);
-
-             centreWithSize (getWidth(), getHeight());
-
-             setVisible (true);
-         }
-
-         void closeButtonPressed() override
-         {
-             JUCEApplication::getInstance()->systemRequestedQuit();
-         }
-
-     private:
-         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
-     };
-
-     std::unique_ptr<MainWindow> mainWindow;
- };
-
- //==============================================================================
- START_JUCE_APPLICATION (Application)
-#endif
+START_JUCE_APPLICATION (Application)
