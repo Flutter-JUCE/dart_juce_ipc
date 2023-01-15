@@ -37,3 +37,6 @@ linter:
 
     # Sometimes the reason is obvious.
     prefer_asserts_with_message: false
+
+    # Allow neater shortcircuit return null
+    always_put_control_body_on_new_line: false
