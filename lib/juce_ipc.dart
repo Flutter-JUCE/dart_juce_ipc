@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:juce_ipc/message_framing.dart';
+import 'package:juce_ipc/src/message_framing.dart';
 
 const _defaultHeaderMagic = 0xf2b49e2c;
 

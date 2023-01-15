@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'package:juce_ipc/message_framing_state.dart';
+import 'package:juce_ipc/src/message_framing_state.dart';
 import 'dart:typed_data';
-import 'dart:developer';
 
 /// Converts data from a socket into messages
 ///
@@ -60,7 +59,6 @@ List<int> encodeFramedMessage(List<int> message, int magic) {
   final header = ByteData(2 * 4);
   header.setUint32(0, magic, Endian.little);
   header.setUint32(4, message.length, Endian.little);
-  inspect(header);
 
   return [...header.buffer.asUint8List(), ...message];
 }
