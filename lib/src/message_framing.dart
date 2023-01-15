@@ -1,6 +1,9 @@
-import 'dart:async';
-import 'package:juce_ipc/src/message_framing_state.dart';
-import 'dart:typed_data';
+// ignore_for_file: public_member_api_docs
+
+import "dart:async";
+import "dart:typed_data";
+
+import "message_framing_state.dart";
 
 /// Converts data from a socket into messages
 ///
@@ -10,14 +13,12 @@ class MessageFramingDecoder {
   MessageFramingDecoder({required int magic}) : _magic = magic;
 
   final int _magic;
-  late StreamController<List<int>> controller;
-
-  var state = const MessageFramingDecoderState.header([]);
+  var _state = const MessageFramingDecoderState.header([]);
 
   void _processByte(int byte, EventSink<List<int>> sink) {
     assert(0 <= byte && byte <= 0xFF);
 
-    state = state.map(
+    _state = _state.map(
       header: (header) {
         final newBytes = [...header.data, byte];
 
@@ -49,16 +50,16 @@ class MessageFramingDecoder {
   }
 
   void processBytes(List<int> input, EventSink<List<int>> sink) {
-    for (var byte in input) {
+    for (final byte in input) {
       _processByte(byte, sink);
     }
   }
 }
 
 List<int> encodeFramedMessage(List<int> message, int magic) {
-  final header = ByteData(2 * 4);
-  header.setUint32(0, magic, Endian.little);
-  header.setUint32(4, message.length, Endian.little);
+  final header = ByteData(2 * 4)
+  ..setUint32(0, magic, Endian.little)
+  ..setUint32(4, message.length, Endian.little);
 
   return [...header.buffer.asUint8List(), ...message];
 }
