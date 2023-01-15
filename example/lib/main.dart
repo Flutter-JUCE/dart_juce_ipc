@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -12,7 +13,7 @@ void main(List<String> args) async {
   // this file instead.
   final file = File('/tmp/flutter-args').openWrite();
 
-  Logger.root.level = Level.ALL;
+  Logger.root.level = Level.FINE;
   Logger.root.onRecord.listen((record) {
     final String message =
         "${record.loggerName}: ${record.level.name}: ${record.time}: ${record.message}";
@@ -35,7 +36,7 @@ void main(List<String> args) async {
 
         worker.write.write("hello world");
 
-        await worker.read.forEach(_log.info);
+        await worker.read.transform(utf8.decoder).forEach(_log.info);
       });
 
       runApp(const MyApp());

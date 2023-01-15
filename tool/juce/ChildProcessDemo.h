@@ -57,14 +57,13 @@ static const char* demoCommandLineUID = "demoUID";
 // A few quick utility functions to convert between raw data and ValueTrees
 static ValueTree memoryBlockToValueTree (const MemoryBlock& mb)
 {
-    return ValueTree::readFromData (mb.getData(), mb.getSize());
+    return ValueTree::fromXml(String::createStringFromData(mb.getData(), mb.getSize()));
 }
 
 static MemoryBlock valueTreeToMemoryBlock (const ValueTree& v)
 {
     MemoryOutputStream mo;
-    v.writeToStream (mo);
-
+    mo.writeString(v.toXmlString());
     return mo.getMemoryBlock();
 }
 
