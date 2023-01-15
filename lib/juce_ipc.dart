@@ -36,10 +36,6 @@ class JuceInterprocessConnectionNamedPipe
         ),
       );
 
-  late final _fileSink = _pipe.openWrite();
-  // Controller must not be broadcast while we use shared state and
-  // [StreamTransformer.fromHandlers] on it.
-  //
   // The sink is closed by the [_write] [IOSink] automatically.
   // ignore: close_sinks
   late final _controller = StreamController<List<int>>();
@@ -65,19 +61,14 @@ class JuceInterprocessConnectionNamedPipe
   }
 
   void _setUpSink() {
-    final messageStream = _controller.stream.transform(
-      StreamTransformer<List<int>, List<int>>.fromHandlers(
-        handleData: (data, sink) {
-          sink.add(encodeFramedMessage(data, _magic));
-        },
-        handleDone: (sink) => sink.close(),
-      ),
-    );
+    final messageStream =
+        _controller.stream.map((data) => encodeFramedMessage(data, _magic));
 
     Future.microtask(() async {
-      await _fileSink.addStream(messageStream);
-      await _fileSink.flush();
-      await _fileSink.close();
+      final fileSink = _pipe.openWrite();
+      await fileSink.addStream(messageStream);
+      await fileSink.flush();
+      await fileSink.close();
     });
   }
 }
