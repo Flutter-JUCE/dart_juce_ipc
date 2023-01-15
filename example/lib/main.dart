@@ -34,8 +34,8 @@ void main(List<String> args) async {
           return;
         }
 
+        // TODO implement the same behaviour as the original JUCE example
         worker.write.write("hello world");
-
         await worker.read.transform(utf8.decoder).forEach(_log.info);
       });
 
