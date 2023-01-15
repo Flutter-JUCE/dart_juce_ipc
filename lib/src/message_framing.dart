@@ -1,7 +1,10 @@
 // ignore_for_file: public_member_api_docs
 
 import "dart:async";
+import "dart:convert" show ascii;
 import "dart:typed_data";
+
+import "package:logging/logging.dart";
 
 import "message_framing_state.dart";
 
@@ -12,15 +15,21 @@ import "message_framing_state.dart";
 class MessageFramingDecoder {
   MessageFramingDecoder({required int magic}) : _magic = magic;
 
+  final _log = Logger("juce_ipc.message_framing");
+
   final int _magic;
   var _state = const MessageFramingDecoderState.header([]);
 
   void _processByte(int byte, EventSink<List<int>> sink) {
+    _log.finest(
+      "Received byte: ${byte.toPadded()} ${byte.toHex()} ${byte.toChar()}",
+    );
     assert(0 <= byte && byte <= 0xFF);
 
     _state = _state.map(
       header: (header) {
         final newBytes = [...header.data, byte];
+        _log.finest("Receiving header: ${newBytes.toHex()}");
 
         if (newBytes.length < 4 * 2) {
           return MessageFramingDecoderState.header(newBytes);
@@ -33,6 +42,7 @@ class MessageFramingDecoder {
           }
 
           final messageSize = bytes.getUint32(4, Endian.little);
+          _log.fine("Got header with message size $messageSize");
           return MessageFramingDecoderState.message(messageSize, []);
         }
       },
@@ -42,6 +52,9 @@ class MessageFramingDecoder {
         final newState = message.copyWith(data: [...message.data, byte]);
 
         if (newState.data.length == message.size) {
+          _log.fine(
+            "Got message: ${newState.data.toHex()} ${newState.data.toChar()}",
+          );
           sink.add(newState.data);
           return const MessageFramingDecoderState.header([]);
         }
@@ -64,4 +77,22 @@ List<int> encodeFramedMessage(List<int> message, int magic) {
     ..setUint32(4, message.length, Endian.little);
 
   return [...header.buffer.asUint8List(), ...message];
+}
+
+extension on int {
+  String toPadded() => toString().padLeft(3);
+  String toHex() => "0x${toRadixString(16).padLeft(2, '0')}";
+  String toChar() {
+    if (this < 0x20 || this > 0x7E) {
+      return "�";
+    }
+    return ascii.decode([this]);
+  }
+}
+
+extension on List<int> {
+  String toHex() =>
+      "[${map((e) => e.toHex()).reduce((value, element) => "$value, $element")}]";
+  String toChar() =>
+      map((e) => e.toChar()).reduce((value, element) => "$value$element");
 }

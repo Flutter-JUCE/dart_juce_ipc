@@ -241,7 +241,7 @@ public:
     //==============================================================================
     std::unique_ptr<DemoCoordinatorProcess> coordinatorProcess;
 
-    static constexpr auto timeoutSeconds = 1;
+    static constexpr auto timeoutSeconds = 10;
     static constexpr auto timeoutMillis = timeoutSeconds * 1000;
 
 private:
