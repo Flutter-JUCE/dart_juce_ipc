@@ -20,9 +20,10 @@ abstract class JuceInterprocessConnection {
 class JuceInterprocessConnectionNamedPipe
     implements JuceInterprocessConnection {
   /// Create a new connection
-  JuceInterprocessConnectionNamedPipe(String pipeName,
-      {int magic = _defaultHeaderMagic,})
-      : _pipe = File(pipeName),
+  JuceInterprocessConnectionNamedPipe(
+    String pipeName, {
+    int magic = _defaultHeaderMagic,
+  })  : _pipe = File(pipeName),
         _magic = magic,
         _decoder = MessageFramingDecoder(magic: magic);
 
@@ -30,10 +31,10 @@ class JuceInterprocessConnectionNamedPipe
   final int _magic;
 
   late final Stream<List<int>> _read = _pipe.openRead().transform(
-    StreamTransformer.fromHandlers(
-      handleData: _decoder.processBytes,
-    ),
-  );
+        StreamTransformer.fromHandlers(
+          handleData: _decoder.processBytes,
+        ),
+      );
 
   late final _fileSink = _pipe.openWrite();
   // Controller must not be broadcast while we use shared state and

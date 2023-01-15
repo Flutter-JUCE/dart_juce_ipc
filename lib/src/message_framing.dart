@@ -58,8 +58,8 @@ class MessageFramingDecoder {
 
 List<int> encodeFramedMessage(List<int> message, int magic) {
   final header = ByteData(2 * 4)
-  ..setUint32(0, magic, Endian.little)
-  ..setUint32(4, message.length, Endian.little);
+    ..setUint32(0, magic, Endian.little)
+    ..setUint32(4, message.length, Endian.little);
 
   return [...header.buffer.asUint8List(), ...message];
 }
