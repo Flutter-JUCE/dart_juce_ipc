@@ -1,11 +1,11 @@
 // ignore_for_file: public_member_api_docs
 
 import "dart:async";
-import "dart:convert" show ascii;
 import "dart:typed_data";
 
 import "package:logging/logging.dart";
 
+import "debug_print.dart";
 import "message_framing_state.dart";
 
 /// Converts data from a socket into messages
@@ -77,22 +77,4 @@ List<int> encodeFramedMessage(List<int> message, int magic) {
     ..setUint32(4, message.length, Endian.little);
 
   return [...header.buffer.asUint8List(), ...message];
-}
-
-extension on int {
-  String toPadded() => toString().padLeft(3);
-  String toHex() => "0x${toRadixString(16).padLeft(2, '0')}";
-  String toChar() {
-    if (this < 0x20 || this > 0x7E) {
-      return "�";
-    }
-    return ascii.decode([this]);
-  }
-}
-
-extension on List<int> {
-  String toHex() =>
-      "[${map((e) => e.toHex()).reduce((value, element) => "$value, $element")}]";
-  String toChar() =>
-      map((e) => e.toChar()).reduce((value, element) => "$value$element");
 }

@@ -1,7 +1,12 @@
 import "dart:async";
 import "dart:io";
 
+import "package:freezed_annotation/freezed_annotation.dart";
+import "package:logging/logging.dart";
+
 import "message_framing.dart";
+
+final _log = Logger("juce_ipc.interprocess_connection");
 
 const _defaultHeaderMagic = 0xf2b49e2c;
 
@@ -22,14 +27,19 @@ class InterprocessConnectionNamedPipe implements InterprocessConnection {
   InterprocessConnectionNamedPipe(
     String pipeName, {
     int magic = _defaultHeaderMagic,
-  })  : _pipe = File(pipeName),
+  })  : pipe = File(pipeName),
         _magic = magic,
-        _decoder = MessageFramingDecoder(magic: magic);
+        _decoder = MessageFramingDecoder(magic: magic) {
+    _log.info("Opening pipe $pipeName");
+  }
 
-  final File _pipe;
+  /// The underlying named pipe resource. Exposed only to be deleted during test
+  /// cleanup.
+  @visibleForTesting
+  final File pipe;
   final int _magic;
 
-  late final Stream<List<int>> _read = _pipe.openRead().transform(
+  late final Stream<List<int>> _read = pipe.openRead().transform(
         StreamTransformer.fromHandlers(
           handleData: _decoder.processBytes,
         ),
@@ -64,7 +74,7 @@ class InterprocessConnectionNamedPipe implements InterprocessConnection {
         _controller.stream.map((data) => encodeFramedMessage(data, _magic));
 
     Future.microtask(() async {
-      final fileSink = _pipe.openWrite();
+      final fileSink = pipe.openWrite();
       await fileSink.addStream(messageStream);
       await fileSink.flush();
       await fileSink.close();

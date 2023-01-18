@@ -27,8 +27,8 @@ void main(List<String> args) async {
       _log.info("args: $args");
 
       final coordinatorDone = Future.microtask(() async {
-        final worker =
-            await ChildProcessWorker.fromCommandLineArguments("demoUID", args);
+        final worker = await ChildProcessWorker.fromCommandLineArguments(
+            uniqueId: "demoUID", args);
         if (worker == null) {
           _log.info("Failed to create worker from command line");
           return;
