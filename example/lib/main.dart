@@ -5,13 +5,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:juce_ipc/juce_ipc.dart';
 import 'package:logging/logging.dart';
+import 'package:xml/xml.dart';
 
 final _log = Logger('juce_ipc_example');
 
 void main(List<String> args) async {
   // When started by JUCE, the stdout logs are not visible. They can be seen in
   // this file instead.
-  final file = File('/tmp/flutter-args').openWrite();
+  final file = File('/tmp/juce_ipc_logs').openWrite();
 
   Logger.root.level = Level.FINE;
   Logger.root.onRecord.listen((record) {
@@ -34,9 +35,19 @@ void main(List<String> args) async {
           return;
         }
 
-        // TODO implement the same behaviour as the original JUCE example
-        worker.write.write("hello world");
-        await worker.read.transform(utf8.decoder).forEach(_log.info);
+        await for (final e in worker.read) {
+          final document = XmlDocument.parse(utf8.decode(e));
+          final count = int.tryParse(document.rootElement.attributes[0].value)!;
+
+          final replyBuilder = XmlBuilder();
+          replyBuilder.element("REPLY",
+              nest: () => replyBuilder.attribute("countPlusOne", count + 1));
+
+          final reply = replyBuilder.buildDocument().toString();
+          worker.write.write(reply);
+        }
+
+        worker.write.close();
       });
 
       runApp(const MyApp());
@@ -71,9 +82,6 @@ class _MyAppState extends State<MyApp> {
         ),
         body: const Center(
           child: Text(''),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {},
         ),
       ),
     );

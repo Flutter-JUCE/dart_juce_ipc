@@ -34,10 +34,9 @@ final _log = Logger("juce_ipc.child_process_worker");
 /// See https://docs.juce.com/master/classChildProcessWorker.html,
 /// https://docs.juce.com/master/classChildProcessCoordinator.html
 
-// TODO how to implement the lost callback? Should the read
-// stream only start after receiving the start message from the coordinator?
+// TODO how to implement the lost callback?
 
-// TODO implement pinging and timeout
+// TODO implement timeout when coordinator does not send pings
 class ChildProcessWorker implements InterprocessConnection {
   ChildProcessWorker._({
     required Stream<List<int>> readConnection,
@@ -106,6 +105,14 @@ class ChildProcessWorker implements InterprocessConnection {
       }
     });
 
+    final killSubscription = readBroadcast.listen((e) {
+      if (const ListEquality<int>().equals(e, utf8.encode(kKillMessage))) {
+        _log.warning("received kill message");
+        // TODO close the read stream, or implement some other way of notifying
+        // the user about the coordinator going away
+      }
+    });
+
     final startMessageCompleter = Completer<void>();
     final startMessageSubscription = readBroadcast.listen((e) {
       if (const ListEquality<int>().equals(e, utf8.encode(kStartMessage))) {
@@ -120,6 +127,7 @@ class ChildProcessWorker implements InterprocessConnection {
     } on TimeoutException {
       await loggingSubscription.cancel();
       await pingingSubscription.cancel();
+      await killSubscription.cancel();
       rethrow;
     } finally {
       await startMessageSubscription.cancel();
@@ -140,6 +148,7 @@ class ChildProcessWorker implements InterprocessConnection {
   // ignore: unused_field
   final StreamSubscription<String> _loggingSubscription;
 
+  // TODO also filter out the kill message
   late final _readData = _readConnection.where(
     (e) =>
         e.length != specialMessageLength ||
