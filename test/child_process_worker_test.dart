@@ -110,5 +110,32 @@ void main() {
     expect(data, hasLength(0));
   });
 
+  test("Responds to ping messages", () async {
+    final args = <String>["--ID:p0000000000000000"];
+    final worker = ChildProcessWorker.fromCommandLineArguments(
+      args,
+      uniqueId: "ID",
+      timeout: const Duration(milliseconds: 100),
+    );
+
+    coordinatorOutPipe.write.add(utf8.encode(kStartMessage));
+    final childOutput = coordinatorInPipe.read.toList();
+
+    final workerValue = await worker;
+    expect(workerValue, isNotNull);
+
+    coordinatorOutPipe.write.add(utf8.encode(kPingMessage));
+    await coordinatorOutPipe.write.flush();
+    await coordinatorOutPipe.write.close();
+
+    // Time for child to receive the ping message and send the response before
+    // its write sink is closed by the test.
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    unawaited(workerValue!.write.close());
+
+    expect(await childOutput, [utf8.encode(kPingMessage)]);
+  });
+
   // TODO detect coordinator not responding
 }

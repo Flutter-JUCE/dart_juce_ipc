@@ -34,7 +34,7 @@ final _log = Logger("juce_ipc.child_process_worker");
 /// See https://docs.juce.com/master/classChildProcessWorker.html,
 /// https://docs.juce.com/master/classChildProcessCoordinator.html
 
-// TODO how to implement the connection made and lost callback? Should the read
+// TODO how to implement the lost callback? Should the read
 // stream only start after receiving the start message from the coordinator?
 
 // TODO implement pinging and timeout
@@ -100,6 +100,12 @@ class ChildProcessWorker implements InterprocessConnection {
               _log.fine,
             );
 
+    final pingingSubscription = readBroadcast.listen((e) {
+      if (const ListEquality<int>().equals(e, utf8.encode(kPingMessage))) {
+        writeConnection.write.write(kPingMessage);
+      }
+    });
+
     final startMessageCompleter = Completer<void>();
     final startMessageSubscription = readBroadcast.listen((e) {
       if (const ListEquality<int>().equals(e, utf8.encode(kStartMessage))) {
@@ -113,6 +119,7 @@ class ChildProcessWorker implements InterprocessConnection {
       await startMessageCompleter.future.timeout(timeout);
     } on TimeoutException {
       await loggingSubscription.cancel();
+      await pingingSubscription.cancel();
       rethrow;
     } finally {
       await startMessageSubscription.cancel();
@@ -142,6 +149,9 @@ class ChildProcessWorker implements InterprocessConnection {
   /// Stream of messages sent by the coordinator.
   ///
   /// This will close when the connection to the coordinator is lost.
+
+  // TODO probably need a streamcontroller here to close all the internal
+  // subscriptions when this subscription is closed
   @override
   Stream<List<int>> get read => _readData;
 
