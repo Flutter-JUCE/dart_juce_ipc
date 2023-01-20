@@ -136,6 +136,4 @@ void main() {
 
     expect(await childOutput, [utf8.encode(kPingMessage)]);
   });
-
-  // TODO detect coordinator not responding
 }

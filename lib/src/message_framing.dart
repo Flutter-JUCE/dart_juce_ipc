@@ -47,8 +47,6 @@ class MessageFramingDecoder {
         }
       },
       message: (message) {
-        // TODO: This potentially copies a large list. Run some stress test
-        // benchmark.
         final newState = message.copyWith(data: [...message.data, byte]);
 
         if (newState.data.length == message.size) {

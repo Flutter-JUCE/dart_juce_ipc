@@ -33,10 +33,6 @@ final _log = Logger("juce_ipc.child_process_worker");
 ///
 /// See https://docs.juce.com/master/classChildProcessWorker.html,
 /// https://docs.juce.com/master/classChildProcessCoordinator.html
-
-// TODO how to implement the lost callback?
-
-// TODO implement timeout when coordinator does not send pings
 class ChildProcessWorker implements InterprocessConnection {
   ChildProcessWorker._({
     required Stream<List<int>> readConnection,
@@ -108,8 +104,6 @@ class ChildProcessWorker implements InterprocessConnection {
     final killSubscription = readBroadcast.listen((e) {
       if (const ListEquality<int>().equals(e, utf8.encode(kKillMessage))) {
         _log.warning("received kill message");
-        // TODO close the read stream, or implement some other way of notifying
-        // the user about the coordinator going away
       }
     });
 
@@ -144,23 +138,21 @@ class ChildProcessWorker implements InterprocessConnection {
 
   final Stream<List<int>> _readConnection;
   final InterprocessConnection _writeConnection;
-  // TODO close this subscription at some point
+
   // ignore: unused_field
   final StreamSubscription<String> _loggingSubscription;
 
-  // TODO also filter out the kill message
+  // Start message is not filtered, because only one is ever sent, and it is
+  // already received in the fromCommandLineArguments static factory
   late final _readData = _readConnection.where(
     (e) =>
-        e.length != specialMessageLength ||
-        !const ListEquality<int>().equals(e, utf8.encode(kPingMessage)),
+        !const ListEquality<int>().equals(e, utf8.encode(kPingMessage)) &&
+        !const ListEquality<int>().equals(e, utf8.encode(kKillMessage)),
   );
 
   /// Stream of messages sent by the coordinator.
   ///
   /// This will close when the connection to the coordinator is lost.
-
-  // TODO probably need a streamcontroller here to close all the internal
-  // subscriptions when this subscription is closed
   @override
   Stream<List<int>> get read => _readData;
 

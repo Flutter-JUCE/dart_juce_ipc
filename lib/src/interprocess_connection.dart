@@ -81,14 +81,3 @@ class InterprocessConnectionNamedPipe implements InterprocessConnection {
     });
   }
 }
-
-/// Manages a simple two-way messaging connection to another process using a socket.
-class JuceInterprocessConnectionSocket implements InterprocessConnection {
-  @override
-  // TODO: implement read
-  Stream<List<int>> get read => throw UnimplementedError();
-
-  @override
-  // TODO: implement write
-  IOSink get write => throw UnimplementedError();
-}
