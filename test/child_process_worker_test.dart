@@ -45,6 +45,19 @@ void main() {
     await coordinatorInPipe.pipe.delete();
   });
 
+  test("factory returns null with empty arguments", () async {
+    final worker =
+        ChildProcessWorker.fromCommandLineArguments([], uniqueId: "ID");
+    expect(await worker, isNull);
+  });
+
+  test("factory returns null when ID does not match", () async {
+    final args = <String>["--badID:p0000000000000000"];
+    final worker =
+        ChildProcessWorker.fromCommandLineArguments(args, uniqueId: "ID");
+    expect(await worker, isNull);
+  });
+
   test("factory times out if coordinator does not send start message",
       () async {
     final args = <String>["--ID:p0000000000000000"];
