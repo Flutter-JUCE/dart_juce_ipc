@@ -1,6 +1,8 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+// ignore_for_file: public_member_api_docs
 
-part 'message_framing_state.freezed.dart';
+import "package:freezed_annotation/freezed_annotation.dart";
+
+part "message_framing_state.freezed.dart";
 
 @freezed
 class MessageFramingDecoderState with _$MessageFramingDecoderState {

@@ -1,7 +1,12 @@
-import 'dart:async';
-import 'package:juce_ipc/message_framing_state.dart';
-import 'dart:typed_data';
-import 'dart:developer';
+// ignore_for_file: public_member_api_docs
+
+import "dart:async";
+import "dart:typed_data";
+
+import "package:logging/logging.dart";
+
+import "debug_print.dart";
+import "message_framing_state.dart";
 
 /// Converts data from a socket into messages
 ///
@@ -10,17 +15,21 @@ import 'dart:developer';
 class MessageFramingDecoder {
   MessageFramingDecoder({required int magic}) : _magic = magic;
 
-  final int _magic;
-  late StreamController<List<int>> controller;
+  final _log = Logger("juce_ipc.message_framing");
 
-  var state = const MessageFramingDecoderState.header([]);
+  final int _magic;
+  var _state = const MessageFramingDecoderState.header([]);
 
   void _processByte(int byte, EventSink<List<int>> sink) {
+    _log.finest(
+      "Received byte: ${byte.toPadded()} ${byte.toHex()} ${byte.toChar()}",
+    );
     assert(0 <= byte && byte <= 0xFF);
 
-    state = state.map(
+    _state = _state.map(
       header: (header) {
         final newBytes = [...header.data, byte];
+        _log.finest("Receiving header: ${newBytes.toHex()}");
 
         if (newBytes.length < 4 * 2) {
           return MessageFramingDecoderState.header(newBytes);
@@ -33,6 +42,7 @@ class MessageFramingDecoder {
           }
 
           final messageSize = bytes.getUint32(4, Endian.little);
+          _log.fine("Got header with message size $messageSize");
           return MessageFramingDecoderState.message(messageSize, []);
         }
       },
@@ -40,6 +50,9 @@ class MessageFramingDecoder {
         final newState = message.copyWith(data: [...message.data, byte]);
 
         if (newState.data.length == message.size) {
+          _log.fine(
+            "Got message: ${newState.data.toHex()} ${newState.data.toChar()}",
+          );
           sink.add(newState.data);
           return const MessageFramingDecoderState.header([]);
         }
@@ -50,17 +63,16 @@ class MessageFramingDecoder {
   }
 
   void processBytes(List<int> input, EventSink<List<int>> sink) {
-    for (var byte in input) {
+    for (final byte in input) {
       _processByte(byte, sink);
     }
   }
 }
 
 List<int> encodeFramedMessage(List<int> message, int magic) {
-  final header = ByteData(2 * 4);
-  header.setUint32(0, magic, Endian.little);
-  header.setUint32(4, message.length, Endian.little);
-  inspect(header);
+  final header = ByteData(2 * 4)
+    ..setUint32(0, magic, Endian.little)
+    ..setUint32(4, message.length, Endian.little);
 
   return [...header.buffer.asUint8List(), ...message];
 }

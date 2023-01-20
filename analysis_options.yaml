@@ -1,4 +1,42 @@
-include: package:flutter_lints/flutter.yaml
+include: all_analysis_options.yaml
+analyzer:
+  exclude:
+      - "**/*.g.dart"
+      - "**/*.freezed.dart"
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    # Otherwise cause the import of all_lint_rules to warn because of some
+    # rules conflicts.  We explicitly enabled even conflicting rules and are
+    # fixing the conflict in this file.
+    included_file_warning: ignore
+linter:
+  rules:
+    # Conflicts with relative imports.
+    always_use_package_imports: false
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+    # Conflicts with prefer_double_qoutes.
+    prefer_single_quotes: false
+
+    # Too verbose.
+    always_specify_types: false
+
+    # Being slightly over is fine.
+    lines_longer_than_80_chars: false
+
+    # Too verbose.
+    prefer_final_parameters: false
+
+    # Conflicts with prefer_final_locals and prefer_final_parameters.
+    unnecessary_final: false
+
+    # Plain TODOs are fine.
+    flutter_style_todos: false
+
+    # Sometimes the reason is obvious.
+    prefer_asserts_with_message: false
+
+    # Allow neater shortcircuit return null
+    always_put_control_body_on_new_line: false

@@ -12,6 +12,7 @@ on:
   schedule:
     # runs the CI everyday at 10AM
     - cron: "0 10 * * *"
+  workflow_dispatch:
 
 jobs:
   flutter:
@@ -67,3 +68,4 @@ jobs:
           fi
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          CODECOV_FLAGS: unit,${{ matrix.os }}
