@@ -19,8 +19,7 @@ jobs:
     strategy:
       matrix:
         channel:
-          # The dev channel does not support reading from a fifo for now
-          # - dev
+          - dev
           - beta
           - master
         os:
