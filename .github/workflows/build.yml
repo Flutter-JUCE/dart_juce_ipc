@@ -10,8 +10,8 @@ on:
     paths-ignore:
       - "**.md"
   schedule:
-    # runs the CI everyday at 10AM
-    - cron: "0 10 * * *"
+    # runs the CI every Friday at 10AM
+    - cron: "0 10 * * 5"
   workflow_dispatch:
 
 jobs:
@@ -19,8 +19,9 @@ jobs:
     strategy:
       matrix:
         channel:
-          - dev
+          - stable
           - beta
+          - dev
           - master
         os:
           - macos-latest
