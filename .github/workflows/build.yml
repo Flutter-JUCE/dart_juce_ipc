@@ -21,7 +21,6 @@ jobs:
         channel:
           - stable
           - beta
-          - dev
           - master
         os:
           - macos-latest
