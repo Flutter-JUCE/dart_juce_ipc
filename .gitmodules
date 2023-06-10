@@ -1,3 +1,3 @@
 [submodule "tool/juce/JUCE"]
-	path = tool/juce/JUCE
+	path = example/tool/host/JUCE
 	url = https://github.com/juce-framework/JUCE.git
