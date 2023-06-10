@@ -1,16 +1,12 @@
-# juce_ipc_example
+# juce_ipc Example
 
-Demonstrates how to use the juce_ipc plugin.
+This example implement the child process from the
+[ChildProcessDemo](https://github.com/juce-framework/JUCE/blob/69795dc8e589a9eb5df251b6dd994859bf7b3fab/examples/Utilities/ChildProcessDemo.h)
+JUCE example.
 
-## Getting Started
+## Running the example
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Build the example for release: e.g. `flutter build linux`
+1. Build host application after changing the current directory to `tool/host`: `cmake -G Ninja -B build && cmake --build build`
+1. Run the host application: `./build/ChildProcessDemo_artefacts/ChildProcessDemo`
+1. (optional) Observe the child process logs: `tail -f /tmp/juce_ipc_logs`

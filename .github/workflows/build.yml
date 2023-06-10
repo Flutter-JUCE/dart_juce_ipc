@@ -17,6 +17,9 @@ on:
 jobs:
   flutter:
     strategy:
+      # Some tests are falky. disable fail fast so the parallel jobs are not
+      # immediately cancelled when a test fails due to flake.
+      fail-fast: false
       matrix:
         channel:
           - stable
