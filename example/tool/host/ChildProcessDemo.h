@@ -47,6 +47,7 @@
 #pragma once
 
 #include "DemoUtilities.h"
+#include "focusrite/e2e/TestCentre.h"
 #include <filesystem>
 
 //==============================================================================
@@ -85,15 +86,19 @@ public:
         setOpaque (true);
 
         addAndMakeVisible (launchButton);
+        launchButton.setComponentID("launch");
         launchButton.onClick = [this] { launchChildProcess(); };
 
         addAndMakeVisible (pingButton);
+        pingButton.setComponentID("ping");
         pingButton.onClick = [this] { pingChildProcess(); };
 
         addAndMakeVisible (killButton);
+        killButton.setComponentID("kill");
         killButton.onClick = [this] { killChildProcess(); };
 
         addAndMakeVisible (testResultsBox);
+        testResultsBox.setComponentID("testResults");
         testResultsBox.setMultiLine (true);
         testResultsBox.setFont ({ Font::getDefaultMonospacedFontName(), 12.0f, Font::plain });
 
@@ -289,10 +294,14 @@ public:
 
     void initialise (const String& commandLine) override
     {
+        testCentre = focusrite::e2e::TestCentre::create ();
         mainWindow = std::make_unique<MainWindow> ("ChildProcessDemo", std::make_unique<ChildProcessDemo>());
     }
 
-    void shutdown() override                                { mainWindow = nullptr; }
+    void shutdown() override                                {
+        mainWindow = nullptr;
+
+    }
 
 private:
     class MainWindow    : public DocumentWindow
@@ -322,6 +331,7 @@ private:
     };
 
     std::unique_ptr<MainWindow> mainWindow;
+    std::unique_ptr <focusrite::e2e::TestCentre> testCentre;
 };
 
 //==============================================================================
