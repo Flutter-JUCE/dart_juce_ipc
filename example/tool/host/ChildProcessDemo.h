@@ -149,7 +149,7 @@ public:
             auto currentPath = File::getSpecialLocation(File::currentExecutableFile);
             std::filesystem::path childProcessPath{ currentPath.getFullPathName().toStdString() };
             // get to the root of the project
-            childProcessPath /= "../../../../..";
+            childProcessPath /= "../../../../../../..";
             // get to the flutter executable
             childProcessPath /= "example/build/linux/x64/release/bundle/juce_ipc_example";
             childProcessPath = childProcessPath.lexically_normal();

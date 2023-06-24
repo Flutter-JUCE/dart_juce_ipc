@@ -55,6 +55,7 @@ void main(List<String> args) async {
       await coordinatorDone;
       await file.flush();
       await file.close();
+      exit(0);
     },
     (error, stack) => _log.severe("Unhandled Exception: $error\n$stack"),
   );

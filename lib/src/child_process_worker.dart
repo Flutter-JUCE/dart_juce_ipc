@@ -35,12 +35,10 @@ final _log = Logger("juce_ipc.child_process_worker");
 /// https://docs.juce.com/master/classChildProcessCoordinator.html
 class ChildProcessWorker implements InterprocessConnection {
   ChildProcessWorker._({
-    required Stream<List<int>> readConnection,
+    required Stream<List<int>> readStream,
     required InterprocessConnection writeConnection,
-    required StreamSubscription<String> loggingSubscription,
-  })  : _readConnection = readConnection,
-        _writeConnection = writeConnection,
-        _loggingSubscription = loggingSubscription;
+  })  : _readStream = readStream,
+        _writeConnection = writeConnection;
 
   /// Create a worker from command line arguments passed by the coordinator.
   ///
@@ -87,64 +85,62 @@ class ChildProcessWorker implements InterprocessConnection {
       magic: kConnectionMagic,
     );
 
-    final readBroadcast = readConnection.read
-        .asBroadcastStream(onCancel: (subscription) => subscription.cancel());
+    final readController = StreamController<List<int>>.broadcast();
+    final readSubscription = readConnection.read.listen(
+      readController.add,
+      onDone: readController.close,
+    );
 
-    final loggingSubscription =
-        readBroadcast.map((e) => "received ${e.toHex()}").listen(
-              _log.fine,
-            );
+    readController.stream
+      ..map((e) => "received ${e.toHex()}").listen(_log.fine)
+      ..listen((e) {
+        if (const ListEquality<int>().equals(e, utf8.encode(kPingMessage))) {
+          writeConnection.write.write(kPingMessage);
+        }
+      })
+      ..listen((e) {
+        if (const ListEquality<int>().equals(e, utf8.encode(kKillMessage))) {
+          _log.info("received kill message");
 
-    final pingingSubscription = readBroadcast.listen((e) {
-      if (const ListEquality<int>().equals(e, utf8.encode(kPingMessage))) {
-        writeConnection.write.write(kPingMessage);
-      }
-    });
+          // TODO close the read stream. How?
+          // check io docs. maybe unlisten the stream?
+          // Right now, the user listener is causing the broadcast stream to stay
+          // alive. We want to ignore that, and close it regardless, emitting a
+          // done event. Do we need to refactor and have a broadcast controller to
+          // close?
+          readSubscription.cancel();
+          readController.close();
+        }
+      });
 
-    final killSubscription = readBroadcast.listen((e) {
-      if (const ListEquality<int>().equals(e, utf8.encode(kKillMessage))) {
-        _log.warning("received kill message");
-      }
-    });
-
-    final startMessageCompleter = Completer<void>();
-    final startMessageSubscription = readBroadcast.listen((e) {
-      if (const ListEquality<int>().equals(e, utf8.encode(kStartMessage))) {
-        startMessageCompleter.complete();
-      }
-    });
+    final startMessage = readController.stream.firstWhere(
+      (e) => const ListEquality<int>().equals(e, utf8.encode(kStartMessage)),
+    );
 
     // Throw TimeoutException if coordinator did not send the start message
     // within the timeout
     try {
-      await startMessageCompleter.future.timeout(timeout);
+      await startMessage.timeout(timeout);
     } on TimeoutException {
-      await loggingSubscription.cancel();
-      await pingingSubscription.cancel();
-      await killSubscription.cancel();
+      await readSubscription.cancel();
+      await readController.close();
       rethrow;
-    } finally {
-      await startMessageSubscription.cancel();
     }
 
     return Future.value(
       ChildProcessWorker._(
-        readConnection: readBroadcast,
+        readStream: readController.stream,
         writeConnection: writeConnection,
-        loggingSubscription: loggingSubscription,
       ),
     );
   }
 
-  final Stream<List<int>> _readConnection;
+  final Stream<List<int>> _readStream;
   final InterprocessConnection _writeConnection;
-
-  // ignore: unused_field
-  final StreamSubscription<String> _loggingSubscription;
 
   // Start message is not filtered, because only one is ever sent, and it is
   // already received in the fromCommandLineArguments static factory
-  late final _readData = _readConnection.where(
+  late final _readData = _readStream.where(
     (e) =>
         !const ListEquality<int>().equals(e, utf8.encode(kPingMessage)) &&
         !const ListEquality<int>().equals(e, utf8.encode(kKillMessage)),
@@ -152,7 +148,9 @@ class ChildProcessWorker implements InterprocessConnection {
 
   /// Stream of messages sent by the coordinator.
   ///
-  /// This will close when the connection to the coordinator is lost.
+  /// This will close when the connection to the coordinator is lost, or when
+  /// the coordinator sends a kill message. In either case, the child process
+  /// should exit.
   @override
   Stream<List<int>> get read => _readData;
 

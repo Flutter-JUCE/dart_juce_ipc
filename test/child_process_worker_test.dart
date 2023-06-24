@@ -149,4 +149,21 @@ void main() {
 
     expect(await childOutput, [utf8.encode(kPingMessage)]);
   });
+
+  test("Closes the read stream when kill message received", () async {
+    final args = <String>["--ID:p0000000000000000"];
+    final worker = ChildProcessWorker.fromCommandLineArguments(
+      args,
+      uniqueId: "ID",
+    );
+
+    coordinatorOutPipe.write.add(utf8.encode(kStartMessage));
+
+    final workerValue = await worker;
+    expect(workerValue, isNotNull);
+
+    coordinatorOutPipe.write.add(utf8.encode(kKillMessage));
+
+    expect(workerValue!.read, emitsInOrder([emitsDone]));
+  });
 }
