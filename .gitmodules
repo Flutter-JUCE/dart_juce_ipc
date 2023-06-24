@@ -1,3 +1,6 @@
 [submodule "tool/juce/JUCE"]
 	path = example/tool/host/JUCE
 	url = https://github.com/juce-framework/JUCE.git
+[submodule "example/tool/host/juce-end-to-end"]
+	path = example/tool/host/juce-end-to-end
+	url = git@github.com:Barabas5532/juce-end-to-end.git

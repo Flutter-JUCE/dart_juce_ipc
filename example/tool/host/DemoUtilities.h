@@ -17,10 +17,10 @@
   ==============================================================================
 */
 
-#ifndef PIP_DEMO_UTILITIES_INCLUDED
-#define PIP_DEMO_UTILITIES_INCLUDED 1
+#pragma once
+#include <juce_gui_basics/juce_gui_basics.h>
 
-#include <JuceHeader.h>
+using namespace juce;
 
 //==============================================================================
 /*
@@ -256,5 +256,3 @@ inline std::unique_ptr<InputSource> makeInputSource (const URL& url)
 
     return std::make_unique<URLInputSource> (url);
 }
-
-#endif   // PIP_DEMO_UTILITIES_INCLUDED
