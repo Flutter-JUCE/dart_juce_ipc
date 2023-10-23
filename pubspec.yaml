@@ -19,7 +19,7 @@ dev_dependencies:
   dart_pre_commit: ^5.0.0
   dcli_core: ^3.0.3
   freezed: ^2.0.0
-  lints: ^2.0.1
+  lints: ^3.0.0
   stdlibc: ^0.1.1
   test: ^1.0.0
 
